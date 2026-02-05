@@ -1,5 +1,7 @@
+.venv
+node_modules
+
 VOL[0-9]*/
-downloader/index/
-formatter/formatted/
+index/
 
 .DS_Store
