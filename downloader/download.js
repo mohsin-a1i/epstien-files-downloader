@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import { RendererLayout, ContentRenderer, ProgressRenderer } from "../render/index.js";
+import IndexStore from "../index/store.js";
 
 async function main() {
     const args = process.argv.slice(2);
@@ -17,80 +18,45 @@ async function main() {
         process.exit(1);
     }
 
-    const indexPath = `../index/INDEX${set}.json`
-    const directory = `../VOL${set.toString().padStart(5, "0")}/`;
+    const index = new IndexStore(set);
+    await index.load();
 
-    const [pendingFileNumbers, fileNumbers] = await getFileNumbers(indexPath, directory);
+    await concurrentDownload(index);
 
-    if (pendingFileNumbers.length > 0) {
-        console.log(`Missing ${pendingFileNumbers.length}/${fileNumbers.length} files`);
+    await index.save();
+}
+main()
+
+async function concurrentDownload(index, concurrent = 100) {
+    const downloadableFileNumbers = await index.getDownloadableFileNumbers();
+
+    if (downloadableFileNumbers.length > 0) {
+        console.log(`Missing ${downloadableFileNumbers.length}/${index.getServerFilesCount()} files`);
     } else {
         console.log("All files already downloaded");
         return;
     }
 
-    const failed = await concurrentDownload(set, pendingFileNumbers, directory);
-
-    if (failed) {
-        console.log(`Failed to download ${failed}/${pendingFileNumbers.length} files`);
-    } else {
-        console.log(`All files downloaded successfully`);
-    }
-}
-main()
-
-function getFileName(fileNumber) {
-    return `EFTA${fileNumber.toString().padStart(8, "0")}.pdf`
-}
-
-function getFileURL(set, fileName) {
-    return `https://www.justice.gov/epstein/files/DataSet%20${set}/${fileName}`
-}
-
-async function getFileNumbers(indexPath, directory) {
-    console.log(`Checking ${directory}`);
-
-    const index = JSON.parse(await fs.readFile(indexPath, "utf8"));
-    const fileNumbers = index.server.files;
-
-    let pendingFileNumbers = [];
-    for (const fileNumber of fileNumbers) {
-        const filename = getFileName(fileNumber);
-        if (!await fileExists(`${directory}${filename}`)) pendingFileNumbers.push(fileNumber);
-    }
-
-    return [pendingFileNumbers, fileNumbers];
-}
-
-async function fileExists(path) {
-    try {
-        await fs.access(path);
-    } catch (error) {
-        if (error.code === "ENOENT") return false;
-    }
-
-    return true;
-}
-
-async function concurrentDownload(set, pendingFileNumbers, directory, concurrent = 100) {
     let downloaded = 0;
     let failed = 0;
 
-    const progressRenderer = new ProgressRenderer(pendingFileNumbers.length);
+    const progressRenderer = new ProgressRenderer(downloadableFileNumbers.length);
     const contentRenderer = new ContentRenderer();
     new RendererLayout([progressRenderer, contentRenderer]);
 
-    for (let i = 0; i < pendingFileNumbers.length; i+= concurrent) {
-        const chunk = pendingFileNumbers.slice(i, i + concurrent);
+    for (let i = 0; i < downloadableFileNumbers.length; i+= concurrent) {
+        const chunk = downloadableFileNumbers.slice(i, i + concurrent);
 
         await Promise.allSettled(chunk.map(async (fileNumber) => {
-            const fileName = getFileName(fileNumber);
-            const [success, description] = await download(getFileURL(set, fileName), `${directory}${fileName}`);
+            const fileName = index.getFileName(fileNumber);
+            const [success, description] = await download(index.getFileURL(fileNumber), index.getFilePath(fileNumber));
             
             if (success) {
                 downloaded++;
                 contentRenderer.render(`Downloaded ${fileName}`);
             } else {
+                index.addServerCorruptedFileNumber(fileNumber);
+
                 failed++;
                 contentRenderer.render(`Error downloading ${fileName} : ${description}`);
             }
@@ -99,7 +65,11 @@ async function concurrentDownload(set, pendingFileNumbers, directory, concurrent
         }))
     }
 
-    return failed;
+    if (failed) {
+        console.log(`Failed to download ${failed}/${downloadableFileNumbers.length} files`);
+    } else {
+        console.log(`All files downloaded successfully`);
+    }
 }
 
 async function download(URL, path) {

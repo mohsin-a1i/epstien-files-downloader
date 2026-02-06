@@ -2,6 +2,5 @@
 node_modules
 
 VOL[0-9]*/
-index/
 
 .DS_Store
