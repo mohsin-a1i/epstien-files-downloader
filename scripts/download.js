@@ -27,7 +27,7 @@ async function main() {
 }
 main()
 
-async function concurrentDownload(index, concurrent = 100) {
+async function concurrentDownload(index, concurrent = 1) {
     const downloadableFileNumbers = getDownloadableFileNumbers(index);
 
     if (downloadableFileNumbers.length > 0) {
@@ -74,15 +74,19 @@ async function concurrentDownload(index, concurrent = 100) {
 
 async function download(URL, path) {
     const response = await fetch(URL, {
+        "cache": "default",
+        "credentials": "include",
         "headers": {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Priority": "u=0, i",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
             "cookie": "justiceGovAgeVerified=true;",
-            "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": "\"macOS\"",
-            "upgrade-insecure-requests": "1"
         },
-        "body": null,
-        "method": "GET"
+        "method": "GET",
+        "mode": "cors",
+        "redirect": "follow",
+        "referrerPolicy": "strict-origin-when-cross-origin"
     });
 
     if (response.ok) await fs.writeFile(path, response.body);

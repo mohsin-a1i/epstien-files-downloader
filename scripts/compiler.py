@@ -3,8 +3,7 @@ import bisect
 import os
 import re
 import sys
-from pypdf import PdfReader, PdfWriter
-from pypdf.errors import PdfReadError, PdfStreamError
+from index_manager import IndexManager
 
 def main():
     parser = argparse.ArgumentParser()
@@ -18,13 +17,16 @@ def main():
 
     args = parser.parse_args()
 
-    directory = f"VOL{args.set:05d}"
-    output_directory = f"CVOL{args.set:05d}"
+    index = IndexManager(args.set)
+    index.save()
 
-    if not os.path.exists(output_directory):
-        os.mkdir(output_directory)
+    # directory = f"VOL{args.set:05d}"
+    # output_directory = f"CVOL{args.set:05d}"
 
-    combine_pdf(directory, output_directory)
+    # if not os.path.exists(output_directory):
+    #     os.mkdir(output_directory)
+
+    # combine_pdf(directory, output_directory)
 
 def combine_pdf(directory, output_directory):
     pdf_numbers = get_pdf_numbers(directory)

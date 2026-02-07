@@ -13,8 +13,5 @@
   "license": "ISC",
   "author": "mohsin-a1i",
   "type": "module",
-  "main": "scraper/scrape.js",
-  "dependencies": {
-    "pdf-parse": "^2.4.5"
-  }
+  "main": "scraper/scrape.js"
 }
