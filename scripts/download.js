@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import { RendererLayout, ContentRenderer, ProgressRenderer } from "./renderer/index.js";
-import IndexManager from "./index-manager.js";
+import IndexManager from "./utils/index-manager.js";
 
 async function main() {
     const args = process.argv.slice(2);
@@ -19,6 +19,7 @@ async function main() {
     }
 
     const index = new IndexManager(set);
+    await index.indexLocalFiles();
     await index.load();
 
     await concurrentDownload(index);
@@ -95,12 +96,19 @@ async function download(URL, path) {
 }
 
 function getDownloadableFileNumbers(index) {
-    const downloadableFileNumbers = []
+    const downloadableFileNumbers = [];
 
     for (const fileNumber of index.serverFiles) {
-        if (fileNumber in index.localFiles || index.localCorruptedFiles.has(fileNumber)) continue
-        downloadableFileNumbers.push(fileNumber)
+        if (index.localFiles.has(fileNumber)) continue;
+        if (index.localCorruptedFiles.has(fileNumber)) continue;
+
+        const previousFileNumber = index.localFiles.findPrevious(fileNumber);
+        const previousFilePageCount = index.localFiles.get(previousFileNumber);
+        const previousPageNumber = previousFileNumber + previousFilePageCount - 1;
+        if (previousPageNumber >= fileNumber) continue;
+
+        downloadableFileNumbers.push(fileNumber);
     }
 
-    return downloadableFileNumbers
+    return downloadableFileNumbers;
 }

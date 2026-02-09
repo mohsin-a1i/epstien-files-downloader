@@ -1,6 +1,5 @@
-import fs from "fs/promises";
 import { RendererLayout, ContentRenderer, IndexRenderer } from "./renderer/index.js";
-import IndexManager from "./index-manager.js";
+import IndexManager from "./utils/index-manager.js";
 
 async function main() {
 	const args = process.argv.slice(2);
