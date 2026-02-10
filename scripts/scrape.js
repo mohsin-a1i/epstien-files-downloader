@@ -1,5 +1,5 @@
-import { RendererLayout, ContentRenderer, IndexRenderer } from "./renderer/index.js";
-import IndexManager from "./utils/index-manager.js";
+import { RendererLayout, ContentRenderer, IndexRenderer } from "./utils/render/index.js";
+import IndexManager from "./utils/index/index-manager.js";
 
 async function main() {
 	const args = process.argv.slice(2);

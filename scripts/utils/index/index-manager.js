@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import { spawn } from "child_process";
-import { SearchableMap } from "./searchable-map.js";
+import { SearchableMap } from "../data/searchable-map.js";
 
 export default class IndexManager {
   constructor(set) {
@@ -41,7 +41,7 @@ export default class IndexManager {
 
   indexLocalFiles() {
     return new Promise((resolve, reject) => {
-      const pythonProcess = spawn('python', ['index_local_files.py', '-s', this.set]);
+      const pythonProcess = spawn('python', ['index.py', '-s', this.set]);
       pythonProcess.stdout.on('data', (data) => process.stdout.write(data));
       pythonProcess.stderr.on('data', (data) => process.stderr.write(data));
       pythonProcess.on('close', (code) => code === 0 ? resolve() : reject());

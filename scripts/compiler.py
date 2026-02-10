@@ -3,7 +3,7 @@ import bisect
 import os
 import re
 import sys
-from utils.index_manager import IndexManager
+from scripts.utils.index.index_manager import IndexManager
 
 def main():
     parser = argparse.ArgumentParser()
